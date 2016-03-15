@@ -1,5 +1,4 @@
 var JsonPacketSerializer = require('./JsonPacketSerializer');
-var Disconnected = require('./Disconnected');
 var WebSocketClient = require('websocket').w3cwebsocket;
 
 module.exports = function (url) {
