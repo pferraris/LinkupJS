@@ -1,0 +1,28 @@
+{
+  "name": "linkupjs",
+  "version": "1.0.0",
+  "description": "Cliente CommonJS para conectividad con LinkupSharp",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pferraris/LinkupJS.git"
+  },
+  "keywords": [
+    "communication",
+    "framework",
+    "linkup",
+    "connectivity"
+  ],
+  "author": "Pablo Ferraris",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pferraris/LinkupJS/issues"
+  },
+  "homepage": "https://github.com/pferraris/LinkupJS#readme",
+  "dependencies": {
+    "websocket": "^1.0.22"
+  }
+}
