@@ -1,6 +1,6 @@
 {
   "name": "linkupjs",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Cliente CommonJS para conectividad con LinkupSharp",
   "main": "index.js",
   "scripts": {
