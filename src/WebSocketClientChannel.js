@@ -1,44 +1,58 @@
 var JsonPacketSerializer = require('./JsonPacketSerializer');
 var WebSocketClient = require('websocket').w3cwebsocket;
 
-module.exports = function (url) {
-    var self = this;
-    this.url = url;
-    this.serializer = new JsonPacketSerializer(String.fromCharCode(7, 12, 11));
+var create = function (url) {
+  var serializer = JsonPacketSerializer.create(String.fromCharCode(7, 12, 11));
+  var socket = new WebSocketClient(url, undefined, null, null, { rejectUnauthorized: false });
 
-    this.socket = new WebSocketClient(url, undefined, null, null, { rejectUnauthorized: false });
-
-    this.socket.onmessage = function (event) {
-        var packets = self.serializer.deserialize(event.data);
-        for (i = 0; i < packets.length; i++) {
-            var packet = packets[i];
-            packet.Content = JSON.parse(packet.Content);
-            self.packetReceived.call(self, packet);
-        }
-    };
-
-    this.socket.onerror = function (error) {
-        console.log('Channel error: ' + JSON.stringify(error));
-    };
-
-    this.socket.onclose = function () {
-        self.closed.call(self);
-        self.socket = null;
-    };
-    
-    this.packetReceived = function (packet) { }
-    this.closed = function () { }
-
-    this.send = function send(packet) {
-        if (self.socket) {
-            self.socket.send(self.serializer.serialize({
-                TypeName: packet.TypeName,
-                Content: JSON.stringify(packet.Content) 
-            }));
-        }
+  socket.onmessage = function (event) {
+    var packets = serializer.deserialize(event.data);
+    for (i = 0; i < packets.length; i++) {
+      var packet = packets[i];
+      packet.Content = JSON.parse(packet.Content);
+      //console.log(packet);
+      packetReceived(packet);
     }
+  };
 
-    this.close = function close() {
-        self.socket.close();
+  socket.onerror = function (error) {
+    console.log('Channel error: ' + JSON.stringify(error));
+  };
+
+  socket.onclose = function () {
+    closed();
+    socket = null;
+  };
+
+  var packetReceived = function (packet) { }
+  var closed = function () { }
+
+  var send = function send(packet) {
+    //console.log(packet);
+    if (socket) {
+      socket.send(serializer.serialize({
+        TypeName: packet.TypeName,
+        Content: JSON.stringify(packet.Content)
+      }));
     }
+  }
+
+  var close = function close() {
+    socket.close();
+  }
+
+  return {
+    onPacketReceived: function(handler) {
+      packetReceived = handler;
+    },
+    onClosed: function(handler) {
+      closed = handler;
+    },
+    send,
+    close
+  }
+}
+
+module.exports = {
+  create
 }

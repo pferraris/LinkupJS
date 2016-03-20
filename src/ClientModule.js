@@ -1,23 +1,34 @@
-module.exports = {
-    addHandler: function (typeName, handler) {
-        if (!this.handlers)
-            this.handlers = [];
-        this.handlers.push({
-            typeName: typeName,
-            execute: handler,
-            is: function (typeName) {
-                return (this.typeName == typeName)
-            }
-        });
-    },
-    process: function (packet, client) {
-        if (!this.handlers)
-            return false;
-        for (var i = 0; i < this.handlers.length; i++) {
-            var handler = this.handlers[i];
-            if (handler.is(packet.TypeName))
-                return handler.execute(packet, client);
-        }
-        return false;
+var create = function(hnd) {
+  var handlers = [];
+
+  var addHandler = function (handler) {
+    handlers.push({
+      typeName: handler.typeName,
+      execute: handler.method,
+      is: function (typeName) {
+        return (handler.typeName == typeName)
+      }
+    });
+  };
+
+  for (var i = 0; i < hnd.length; i++) {
+    addHandler(hnd[i]);
+  }
+
+  var process = function (packet, client) {
+    for (var i = 0; i < handlers.length; i++) {
+      var handler = handlers[i];
+      if (handler.is(packet.TypeName))
+      return handler.execute(packet, client);
     }
+    return false;
+  };
+
+  return {
+    process
+  };
 }
+
+module.exports = {
+  create
+};

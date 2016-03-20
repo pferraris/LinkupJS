@@ -1,30 +1,37 @@
-module.exports = function (token) {
-    var self = this;
-    this.token = token;
-    this.buffer = "";
+var create = function (token) {
+  var buffer = "";
 
-    this.serialize = function (packet) {
-        var result = JSON.stringify(packet);
-        if (self.token)
-            result = result + self.token;
-        return result;
-    }
+  var serialize = function (packet) {
+    var result = JSON.stringify(packet);
+    if (token)
+      result = result + token;
+    return result;
+  }
 
-    this.deserialize = function (data) {
-        if (self.token) {
-            self.buffer = self.buffer.concat(data);
-            var packets = [];
-            var pos = self.buffer.indexOf(self.token);
-            while (pos > -1) {
-                data = self.buffer.slice(0, pos);
-                packets.push(JSON.parse(data));
-                self.buffer = self.buffer.slice(pos + self.token.length);
-                pos = self.buffer.indexOf(self.token);
-            }
-            return packets;
-        }
-        else {
-            return [JSON.parse(data)];
-        }
+  var deserialize = function (data) {
+    if (token) {
+      buffer = buffer.concat(data);
+      var packets = [];
+      var pos = buffer.indexOf(token);
+      while (pos > -1) {
+        data = buffer.slice(0, pos);
+        packets.push(JSON.parse(data));
+        buffer = buffer.slice(pos + token.length);
+        pos = buffer.indexOf(token);
+      }
+      return packets;
     }
+    else {
+      return [JSON.parse(data)];
+    }
+  }
+
+  return {
+    serialize,
+    deserialize
+  }
+}
+
+module.exports = {
+  create
 }

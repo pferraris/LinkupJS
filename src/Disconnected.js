@@ -1,15 +1,19 @@
 var getPacket = function (content) {
-    return {
-        TypeName: 'LinkupSharp.Disconnected',
-        Content: content
-    }
+  return {
+    TypeName: 'LinkupSharp.Disconnected',
+    Content: content
+  }
 }
 
+var reasons = {
+  none:                  getPacket({ Reason: 0, Description: "None"}),
+  clientRequest:         getPacket({ Reason: 1, Description: "ClientRequest"}),
+  serverRequest:         getPacket({ Reason: 2, Description: "ServerRequest"}),
+  anotherSessionOpened:  getPacket({ Reason: 3, Description: "AnotherSessionOpened"}),
+  authenticationTimeOut: getPacket({ Reason: 4, Description: "AuthenticationTimeOut"}),
+  connectionLost:        getPacket({ Reason: 5, Description: "ConnectionLost"})
+};
+
 module.exports = {
-    None:                  getPacket({ Reason: 0, Description: "None"}),
-    ClientRequest:         getPacket({ Reason: 1, Description: "ClientRequest"}),
-    ServerRequest:         getPacket({ Reason: 2, Description: "ServerRequest"}),
-    AnotherSessionOpened:  getPacket({ Reason: 3, Description: "AnotherSessionOpened"}),
-    AuthenticationTimeOut: getPacket({ Reason: 4, Description: "AuthenticationTimeOut"}),
-    ConnectionLost:        getPacket({ Reason: 5, Description: "ConnectionLost"})
+  reasons
 };

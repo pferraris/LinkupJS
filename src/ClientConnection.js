@@ -1,91 +1,138 @@
 var SessionModule = require('./SessionModule');
 var Disconnected = require('./Disconnected');
 
-module.exports = function () {
-    var self = this;
-    this.channel = null;
-    this.isConnected = false;
-    this.sessionContext = null;
-    this.disconnectionReason = null;
-    this.SessionModule = new SessionModule();
-    this.modules = [];
+var create = function() {
+  var channel = null;
+  var isConnected = false;
+  var sessionContext = null;
+  var disconnectionReason = null;
+  var sessionModule = SessionModule.create();
+  var modules = [];
 
-    this.connected = function () { }
-    this.disconnected = function (disconnected) { }
-    this.packetReceived = function (packet) { }
-    this.signedIn = function () { }
-    this.signedOut = function () { }
-    this.authenticationFailed = function () { }
+  var connected = function() { }
+  var disconnected = function(disconnected) { }
+  var packetReceived = function(packet) { }
+  var signedIn = function() { }
+  var signedOut = function() { }
+  var authenticationFailed = function() { }
 
-    this.connect = function (channel) {
-        self.channel = channel;
+  var onConnected = function() {
+    isConnected = true;
+    connected();
+  }
 
-        self.channel.packetReceived = function (packet) {
-            if (self.SessionModule.process(packet, self))
-                return;
+  var onDisconnected = function(disconnectionReason) {
+    channel.packetReceived = function (packet) { };
+    channel.closed = function () { };
+    channel = null;
+    isConnected = false;
+    disconnected(disconnectionReason);
+  }
 
-            for (var i = 0; i < self.modules.length; i++)
-                if (self.modules[i].process(packet, self))
-                    return;
+  var onSignedIn = function(sessionContext) {
+    sessionContext = sessionContext;
+    signedIn();
+  }
 
-            self.onPacketReceived(packet);
+  var onSignedOut = function(sessionContext, current) {
+    if (current) sessionContext = null;
+    signedOut();
+  }
+
+  var onAuthenticationFailed = function() {
+    authenticationFailed();
+  }
+
+  var onPacketReceived = function(packet) {
+    packetReceived(packet);
+  }
+
+  var connect = function(ch) {
+    channel = ch;
+    var client = this;
+    var auth = {
+      onConnected,
+      onDisconnected,
+      onSignedIn,
+      onSignedOut,
+      onAuthenticationFailed
+    };
+
+    channel.onPacketReceived(function(packet) {
+      if (sessionModule.process(packet, auth)) {
+        return;
+      }
+
+      for (var i = 0; i < modules.length; i++) {
+        if (modules[i].process(packet, client)) {
+          return;
         }
+      }
 
-        self.channel.closed = function () {
-            if (!self.disconnectionReason)
-                self.disconnectionReason = Disconnected.ConnectionLost;
-            self.onDisconnected(self.disconnectionReason);
-        }
-    }
+      onPacketReceived(packet);
+    });
 
-    this.disconnect = function (reason, sendReason) {
-        if (!sendReason) sendReason = true;
-        if (reason)
-            self.disconnectionReason = reason;
-        else
-            self.disconnectionReason = Disconnected.ClientRequest;
-        if (self.channel) {
-            if (sendReason) self.send(self.disconnectionReason);
-            self.channel.close();
-        }
-    }
+    channel.onClosed(function() {
+      if (!disconnectionReason) {
+        disconnectionReason = Disconnected.reasons.connectionLost;
+      }
+      onDisconnected(disconnectionReason);
+    });
+  }
 
-    this.send = function (packet) {
-        if (self.channel) {
-            if (self.sessionContext != null)
-                packet.Sender = self.sessionContext.Id;
-            self.channel.send(packet);
-        }
+  var disconnect = function(reason, sendReason) {
+    if (!sendReason) sendReason = true;
+    if (reason) {
+      disconnectionReason = reason;
     }
+    else {
+      disconnectionReason = Disconnected.reasons.clientRequest;
+    }
+    if (channel) {
+      if (sendReason) send(disconnectionReason);
+      channel.close();
+    }
+  }
 
-    this.onConnected = function () {
-        self.isConnected = true;
-        self.connected();
+  var send = function(packet) {
+    if (channel) {
+      if (sessionContext != null) {
+        packet.Sender = sessionContext.Id;
+      }
+      channel.send(packet);
     }
+  }
 
-    this.onDisconnected = function (disconnected) {
-        self.channel.packetReceived = function (packet) { };
-        self.channel.closed = function () { };
-        self.channel = null;
-        self.isConnected = false;
-        self.disconnected(disconnected);
+  return {
+    isConnected,
+    sessionContext,
+    connect,
+    disconnect,
+    send,
+    addModule: function(module) {
+      modules.push(module);
+    },
+    onConnected: function(handler) {
+      connected = handler;
+    },
+    onDisconnected: function(handler) {
+      disconnected = handler;
+    },
+    onPacketReceived: function(handler) {
+      packetReceived = handler;
+    },
+    onSignedIn: function(handler) {
+      signedIn = handler;
+    },
+    onSignedOut: function(handler) {
+      signedOut = handler;
+    },
+    onAuthenticationFailed: function(handler) {
+      authenticationFailed = handler;
     }
+  }
+}
 
-    this.onSignedIn = function (sessionContext) {
-        self.sessionContext = sessionContext;
-        self.signedIn();
-    }
-
-    this.onSignedOut = function (sessionContext, current) {
-        if (current) self.sessionContext = null;
-        self.signedOut();
-    }
-
-    this.onAuthenticationFailed = function () {
-        self.authenticationFailed();
-    }
-
-    this.onPacketReceived = function (packet) {
-        self.packetReceived(packet);
-    }
+module.exports = {
+  create
 }
